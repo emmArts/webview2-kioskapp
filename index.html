@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>KioskApp</title>
+</head>
+<body>
+<h1>KioskApp</h1>
+
+<h2>Interfaces Provided by Device Agent</h2>
+<h3>Print</h3>
+<input id="text" placeholder="No text results in error">
+<button onclick="printText()">Print</button>
+<pre id="printStatus"></pre>
+<h3>Get Config</h3>
+<button onclick="getConfig()">Config</button>
+<pre id="getConfig"></pre>
+
+<h2>Interfaces Provided by Frontend Container</h2>
+<h3>Symbol Scanned</h3>
+<pre id="symbols"></pre>
+<h3>Config</h3>
+<pre id="pushConfig"></pre>
+
+<script>
+  function SymbolScanned(symbol) {
+    const out = document.getElementById('symbols');
+    out.innerText = symbol;
+  }
+</script>
+
+
+<script>
+  async function printText() {
+    const t = document.getElementById("text").value;
+    try {
+      const res = await chrome.webview.hostObjects.sync.deviceAgent.Print(t);
+      document.getElementById("printStatus").innerText = "Status: " + res;
+    } catch (e) {
+      document.getElementById("printStatus").innerText = "Error: " + e;
+    }
+  }
+
+  async function getConfig() {
+    try {
+      const c = await chrome.webview.hostObjects.sync.deviceAgent.GetModuleConfiguration();
+      document.getElementById("getConfig").innerText =
+        "Computer: " + (c.computerName || "") + "\n" +
+        "Printers: " + (c.printers || "") + "\n" +
+        "Devices: " + (c.devices || "");
+    } catch (e) {
+      document.getElementById("config").innerText = "Error: " + e;
+    }
+  }
+</script>
+
+</body>
+</html>
