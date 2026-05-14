@@ -7,12 +7,16 @@ public class FrontendContainer : Form
 {
     private readonly WebView2 webView = new WebView2();
     private readonly DeviceAgent deviceAgent = new DeviceAgent();
+    private readonly string webAppUri;
 
     private bool pageReady = false;
     private string pendingSymbol = null;
 
-    public FrontendContainer()
+    public FrontendContainer(string webAppUri = null)
     {
+
+        this.webAppUri = webAppUri;
+        
         // Kiosk Mode
         FormBorderStyle = FormBorderStyle.None;
         WindowState = FormWindowState.Maximized;
@@ -21,6 +25,8 @@ public class FrontendContainer : Form
 
         Controls.Add(webView);
         webView.Dock = DockStyle.Fill;
+        //webView.CoreWebView2.Settings.IsZoomControlEnabled = false;
+
 
         // Event vom DeviceAgent abonnieren (DeviceAgent bleibt unabhängig vom Frontend)
         deviceAgent.SymbolScanned += DeviceAgentOnSymbolScanned;
@@ -31,14 +37,6 @@ public class FrontendContainer : Form
 
     private async void OnLoad(object sender, EventArgs e)
     {
-        string html = Path.Combine(AppContext.BaseDirectory, "index.html");
-        if (!File.Exists(html))
-        {
-            MessageBox.Show("index.html fehlt:" + html);
-            Environment.Exit(1);
-        }
-
-
         string userDataFolder = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "WebView2",
@@ -51,15 +49,57 @@ public class FrontendContainer : Form
 
         await webView.EnsureCoreWebView2Async(env);
 
-        // Der gleiche DeviceAgent wird dem JS zugänglich gemacht.
+        // Zoom deaktivieren
+        webView.CoreWebView2.Settings.IsZoomControlEnabled = false;
+
+        // Touch- und Scroll-Gesten blockieren
+        await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(@"
+            // Alle Touch-Gesten blockieren
+            document.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+            }, { passive: false });
+
+            document.addEventListener('touchmove', function(e) {
+                e.preventDefault();
+            }, { passive: false });
+
+            document.addEventListener('touchend', function(e) {
+                e.preventDefault();
+            }, { passive: false });
+
+            // Scrollen per Wheel blockieren (Maus, Trackpad)
+            document.addEventListener('wheel', function(e) {
+                e.preventDefault();
+            }, { passive: false });
+
+            // Pointer Events blockieren (Windows Touch API)
+            document.addEventListener('pointerdown', function(e) {
+                e.preventDefault();
+            }, { passive: false });
+
+            document.addEventListener('pointermove', function(e) {
+                e.preventDefault();
+            }, { passive: false });
+
+            document.addEventListener('pointerup', function(e) {
+                e.preventDefault();
+            }, { passive: false });
+        ");
+
+
+
+
+
+
+        // HostObject registrieren
         webView.CoreWebView2.AddHostObjectToScript("deviceAgent", deviceAgent);
 
+        // NavigationCompleted
         webView.CoreWebView2.NavigationCompleted += (_, ev) =>
         {
             if (!ev.IsSuccess) return;
             pageReady = true;
 
-            // Falls während dem Laden schon ein Symbol kam: nachträglich ausliefern.
             if (pendingSymbol != null)
             {
                 _ = CallSymbolScannedAsync(pendingSymbol);
@@ -67,8 +107,9 @@ public class FrontendContainer : Form
             }
         };
 
-        webView.CoreWebView2.Navigate(new Uri(html).AbsoluteUri);
+        webView.CoreWebView2.Navigate(new Uri(webAppUri).AbsoluteUri);
     }
+
 
     private void DeviceAgentOnSymbolScanned(object sender, string symbol)
     {
