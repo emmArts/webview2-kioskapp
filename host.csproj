@@ -6,7 +6,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <PlatformTarget>x64</PlatformTarget>
     <Prefer32Bit>false</Prefer32Bit>
-    <AssemblyName>kioskapp</AssemblyName>
+    <AssemblyName>SblKioskApp</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

@@ -38,7 +38,18 @@ public class FrontendContainer : Form
             Environment.Exit(1);
         }
 
-        await webView.EnsureCoreWebView2Async();
+
+        string userDataFolder = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "WebView2",
+            "KioskApp"
+        );
+
+        var env = await Microsoft.Web.WebView2.Core.CoreWebView2Environment.CreateAsync(
+            userDataFolder: userDataFolder
+        );
+
+        await webView.EnsureCoreWebView2Async(env);
 
         // Der gleiche DeviceAgent wird dem JS zugänglich gemacht.
         webView.CoreWebView2.AddHostObjectToScript("deviceAgent", deviceAgent);
