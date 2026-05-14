@@ -24,6 +24,7 @@ public class FrontendContainer : Form
 
         // Event vom DeviceAgent abonnieren (DeviceAgent bleibt unabhängig vom Frontend)
         deviceAgent.SymbolScanned += DeviceAgentOnSymbolScanned;
+        deviceAgent.PrinterStatusChanged += DeviceAgentOnPrinterStatusChanged;
 
         Load += OnLoad;
     }
@@ -78,6 +79,47 @@ public class FrontendContainer : Form
     private async System.Threading.Tasks.Task CallSymbolScannedAsync(string symbol)
     {
         await webView.CoreWebView2.ExecuteScriptAsync($"SymbolScanned('{symbol}');");
+    }
+
+
+
+
+    private void DeviceAgentOnPrinterStatusChanged(object sender, string status)
+    {
+        if (InvokeRequired)
+        {
+            BeginInvoke(new Action(() => DeviceAgentOnPrinterStatusChanged(sender, status)));
+            return;
+        }
+
+        if (pageReady)
+            RaisePrinterStatus(status);
+    }
+    
+    private void RaiseSymbolScanned(string symbol)
+    {
+        var payload = new
+        {
+            eventName = "SymbolScanned",
+            value = symbol
+        };
+
+        // .Net 8 -> string json = JsonSerializer.Serialize(payload);
+        string json = "{ \"eventName\": \"SymbolScanned\", \"value\": \"" + symbol + "\" }";
+        webView.CoreWebView2.PostWebMessageAsJson(json);
+    }
+
+    private void RaisePrinterStatus(string status)
+    {
+        var payload = new
+        {
+            eventName = "PrinterStatus",
+            value = status
+        };
+
+        // .Net 8 -> string json = JsonSerializer.Serialize(payload);
+        string json = "{ \"eventName\": \"PrinterStatus\", \"value\": \"" + status + "\" }";
+        webView.CoreWebView2.PostWebMessageAsJson(json);
     }
 
 }

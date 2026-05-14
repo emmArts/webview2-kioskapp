@@ -19,18 +19,53 @@
 <h2>Interfaces Provided by Frontend Container</h2>
 <h3>Symbol Scanned</h3>
 <pre id="symbols"></pre>
-<h3>Config</h3>
-<pre id="pushConfig"></pre>
+<h3>Printer Status</h3>
+<pre id="printerStatus"></pre>
+
+
 
 <script>
+  // --- Bridge C# -> JS ---
+
+  // Option 1: ExecuteScriptAsync()
   function SymbolScanned(symbol) {
     const out = document.getElementById('symbols');
     out.innerText = symbol;
   }
+
+  // Option 2: PostWebMessageAsJson()
+  window.chrome.webview.addEventListener("message", (event) => {
+      const data = event.data;
+
+      switch (data.eventName) {
+
+          case "SymbolScanned":
+              onSymbolScanned(data.value);
+              break;
+
+          case "PrinterStatus":
+              onPrinterStatus(data.value);
+              break;
+
+          default:
+              console.warn("Unbekanntes Event:", data);
+      }
+  });
+
+  function onSymbolScanned(symbol) {
+  }
+
+  function onPrinterStatus(status) {
+        const out = document.getElementById('printerStatus');
+    out.innerText = status;
+  }
+
 </script>
 
-
 <script>
+
+  // Brdiget JS -> C#
+  
   async function printText() {
     const t = document.getElementById("text").value;
     try {
@@ -52,6 +87,7 @@
       document.getElementById("config").innerText = "Error: " + e;
     }
   }
+  
 </script>
 
 </body>

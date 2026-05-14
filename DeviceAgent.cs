@@ -10,18 +10,32 @@ public class DeviceAgent
 {
     public event EventHandler<string> SymbolScanned;
     private readonly Timer scanTimer;
+
+    public event EventHandler<string> PrinterStatusChanged;
+    private readonly Timer printerStatusTimer;
+
+
     private static readonly char[] SymbolChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".ToCharArray();
     private readonly Random rnd = new Random();
 
     public DeviceAgent()
     {
         scanTimer = new Timer(_ => RaiseRandomSymbol(), null, dueTime: 2000, period: 2000);
+        printerStatusTimer = new Timer(_ => RaisePrinterStatus(), null, dueTime: 5000, period: 5000);
     }
     private void RaiseRandomSymbol()
     {
         string s = "PACT" + RandomAlphaNumericUpper(12);
         SymbolScanned?.Invoke(this, s);
     }
+    
+    private void RaisePrinterStatus()
+    {
+        string status = GetRandomZebraStatus();
+
+        PrinterStatusChanged?.Invoke(this, status);
+    }
+
     private string RandomAlphaNumericUpper(int length)
     {
         char[] buf = new char[length];
@@ -80,4 +94,30 @@ public class DeviceAgent
     {
             return "TODO";
     }
+
+
+    private static readonly string[] ZebraStatuses = new[]
+    {
+        "Ready",
+        "Printing",
+        "Paused",
+        "HeadOpen",
+        "PaperOut",
+        "RibbonOut",
+        "HeadTooHot",
+        "HeadCold",
+        "CutterFault",
+        "CommunicationsError",
+        "Unknown"
+    };
+
+    private readonly Random rnds = new Random();
+
+    public string GetRandomZebraStatus()
+    {
+        int index = rnds.Next(ZebraStatuses.Length);
+        return ZebraStatuses[index];
+    }
+
+
 }
