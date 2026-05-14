@@ -1,0 +1,17 @@
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.dll
+*.exe
+*.pdb
+*.cache
+*.log
+*.nupkg
+packages/
+publish/
+out/
+.DS_Store
+Thumbs.db
+wv2cache/
